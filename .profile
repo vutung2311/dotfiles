@@ -1,7 +1,14 @@
 # for WSL2
 # set github environment value
-export GITHUB_USERNAME=redacted
+export GITHUB_ACTOR=redacted
 export GITHUB_TOKEN=redacted
+
+# Github
+git config \
+    --global \
+    --replace-all \
+    url."https://${GITHUB_ACTOR}:${GITHUB_TOKEN}@github.com/finblox/".insteadOf \
+    "https://github.com/finblox/"
 
 # setup awscli environment values
 export AWS_PROFILE=redacted

@@ -1,4 +1,3 @@
-
 # for WSL2
 # alias for pbcopy and pbpaste
 alias pbcopy="clip.exe"
@@ -52,7 +51,7 @@ if [ ${ISWSL} -eq 1 ]; then
         export SSH_AUTH_SOCK=${WSL_AGENT_HOME}/S.gpg-agent.ssh
     fi
 elif [ ${ISWSL} -eq 2 ]; then
-    powershell.exe 'agent-gui.exe' &
+    (setsid nohup powershell.exe 'agent-gui.exe' >/dev/null 2>&1 &)
     ${HOME}/.local/bin/win-gpg-agent-relay start
     export SSH_AUTH_SOCK=${HOME}/.gnupg/S.gpg-agent.ssh
 fi
