@@ -18,12 +18,19 @@ PIDFILE="$GNUPGHOME/win-gpg-agent-relay.pid"
 WIN_USER_HOME="$(powershell.exe 'Write-Host $ENV:USERPROFILE')"
 WIN_SORELAY_BIN="${WIN_USER_HOME}\go\bin\sorelay.exe"
 SORELAY_BIN="$(wslpath -a ${WIN_SORELAY_BIN})"
-WINAGENT_HOME_DIR="${WIN_AGENT_HOME}"
-WINGPGAGENT_SOCKETS_DIR="${WIN_GNUPG_SOCKETS}"
+WINAGENT_HOME_DIR="$(powershell.exe 'Write-Host $ENV:WIN_AGENT_HOME')"
+WINGPGAGENT_SOCKETS_DIR="$(powershell.exe 'Write-Host $ENV:WIN_GNUPG_SOCKETS')"
 
-GPG_AGENT_SOCK="$WINGPGAGENT_SOCKETS_DIR/S.gpg-agent"
-GPG_AGENT_EXTRA_SOCK="$WINGPGAGENT_SOCKETS_DIR/S.gpg-agent.extra"
+# GPG_AGENT_SOCK="$WINGPGAGENT_SOCKETS_DIR/S.gpg-agent"
+GPG_AGENT_SOCK="$(wslpath -m $(wslpath -u $(gpgconf.exe --list-dir agent-socket | tr -d '\r')))"
+# GPG_AGENT_EXTRA_SOCK="$WINGPGAGENT_SOCKETS_DIR/S.gpg-agent.extra"
+GPG_AGENT_EXTRA_SOCK="$(wslpath -m $(wslpath -u $(gpgconf.exe --list-dir agent-extra-socket | tr -d '\r')))"
 GPG_AGENT_SSH_SOCK="$WINAGENT_HOME_DIR/S.gpg-agent.ssh"
+# GPG_AGENT_SSH_SOCK="$(wslpath -m $(wslpath -u $(gpgconf.exe --list-dir agent-extra-socket | tr -d '\r')))"
+
+echo "\$GPG_AGENT_SOCK=${GPG_AGENT_SOCK}"
+echo "\$GPG_AGENT_EXTRA_SOCK=${GPG_AGENT_EXTRA_SOCK}"
+echo "\$GPG_AGENT_SSH_SOCK=${GPG_AGENT_SSH_SOCK}"
 
 log() {
     echo >&2 "$@"
@@ -42,17 +49,15 @@ _cleanup() {
     if is_pid_running "$SOCAT_GPG_AGENT_PID"; then
         kill -SIGTERM "$SOCAT_GPG_AGENT_PID" || log "Failed."
     fi
-    rm $GPG_AGENT_SOCK
     log "Cleaning up relay to $GPG_AGENT_EXTRA_SOCK..."
     if is_pid_running "$SOCAT_GPG_AGENT_EXTRA_PID"; then
         kill -SIGTERM "$SOCAT_GPG_AGENT_EXTRA_PID" || log "Failed."
     fi
-    rm $GPG_AGENT_EXTRA_SOCK
     log "Cleaning up relay to $GPG_AGENT_SSH_SOCK..."
     if is_pid_running "$SOCAT_GPG_AGENT_SSH_PID"; then
         kill -SIGTERM "$SOCAT_GPG_AGENT_SSH_PID" || log "Failed."
     fi
-    rm $GPG_AGENT_SSH_SOCK
+    rm -f "$HOME/.gnupg/S.gpg-agent" "$HOME/.gnupg/S.gpg-agent.extra" "$HOME/.gnupg/S.gpg-agent.ssh"
 }
 
 die() {
